@@ -75,23 +75,51 @@ assert sent[-1] == '.' or len(sent) <= 15
 print(' '.join(sent))
 
 def predict_beam(bigram, beam_size=4, sent_length=10, cnt2=cnt2, cnt3=cnt3):    
-    list_of_sentence = []
-    searchw = bigram
-    p3start = prob3(searchw)
-    largest = nlargest(beam_size, p3start, key = p3start.get)
-    print(largest)
-    '''
-    while len(list_of_sentence)<beam_size:
-        for s in searchw:
-            slis = []
-            pbs = prob3(s[-2:])
-            largest = nlargest(beam_size, pbs, key = pbs.get)
-            for nl in largest:
-                slis.append(s+nl)
-        return list_of_sentence
-    '''
+    #list_of_sentence = []
+    list_of_words = [bigram[0], bigram[1]]
+    slist = [list_of_words]
+    sdict=dict()
+    for i in range(len(bigram),sent_length-2):
+        dictrun=dict()
+        for s in slist:
+            if ' '.join(s) in sdict.keys():
+                preprob = sdict[' '.join(s)]
+            else:
+                preprob = 0
+            searchw = (s[-2],s[-1])
+            p3search = prob3(searchw)
+            larg4 = nlargest(beam_size, p3search, key = p3search.get)
+            for l in larg4:
+                if l != '.':
+                    sl = s+[l]
+                    dictrun[' '.join(sl)] = p3search[l]+preprob
+        larg4of16 = nlargest(beam_size, dictrun, key = dictrun.get)
+        li = [line.split(' ') for line in larg4of16]
+        slist = li
+        sdict = dictrun
+    #print(slist)
+    dictrun=dict()
+    for s in slist:
+        preprob = sdict[' '.join(s)]
+        searchw = (s[-2],s[-1])
+        p3search = prob3(searchw)
+        pk = p3search.keys()
+        for k in pk:
+            if k != '.':
+                sk = s+[k]
+                pprob = preprob+p3search[k]
+                searchw = (s[-1],k)
+                fsearch = prob3(searchw)
+                if '.' in fsearch.keys():
+                    dictrun[' '.join(sk)] = fsearch['.']+pprob
+    
+    last4 = nlargest(beam_size, dictrun, key = dictrun.get)
+    #print(last4)
+    list_of_sentence = [line.split(' ')+['.'] for line in last4]    
+        
     return list_of_sentence
 
-predict_beam(('we', 'are'))
-#for sent in predict_beam(('we', 'are')):
-#    print(' '.join(sent))
+#predict_beam(('we', 'are'))
+for sent in predict_beam(('we', 'are')):
+    assert sent[-1] == '.' or len(sent) < 10
+    print(' '.join(sent))

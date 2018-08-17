@@ -5,6 +5,7 @@ Created on Fri Aug 17 10:47:16 2018
 @author: agassi001
 """
 import math
+from heapq import nlargest
 
 def ngram_probs(filename='raw_sentences.txt'):
     f = open(filename,'r')
@@ -55,3 +56,42 @@ def prob3(bigram, cnt2=cnt2, cnt3=cnt3):
 
 p = prob3(('we', 'are'))
 print(p['family'])
+
+def predict_max(starting, cnt2=cnt2, cnt3=cnt3):
+    searchw = starting
+    list_of_words = [starting[0], starting[1]]
+    while list_of_words[-1] != '.' and len(list_of_words)<16:
+        pws = prob3(searchw)
+        pw_k = list(pws.keys())
+        pw_v = list(pws.values())
+        nextw = pw_k[pw_v.index(max(pw_v))]
+        list_of_words.append(nextw)
+        searchw = (searchw[1],nextw)
+        #print(nextw)
+    return list_of_words
+
+sent = predict_max(('we', 'are'))
+assert sent[-1] == '.' or len(sent) <= 15
+print(' '.join(sent))
+
+def predict_beam(bigram, beam_size=4, sent_length=10, cnt2=cnt2, cnt3=cnt3):    
+    list_of_sentence = []
+    searchw = bigram
+    p3start = prob3(searchw)
+    largest = nlargest(beam_size, p3start, key = p3start.get)
+    print(largest)
+    '''
+    while len(list_of_sentence)<beam_size:
+        for s in searchw:
+            slis = []
+            pbs = prob3(s[-2:])
+            largest = nlargest(beam_size, pbs, key = pbs.get)
+            for nl in largest:
+                slis.append(s+nl)
+        return list_of_sentence
+    '''
+    return list_of_sentence
+
+predict_beam(('we', 'are'))
+#for sent in predict_beam(('we', 'are')):
+#    print(' '.join(sent))
